@@ -28,6 +28,7 @@ class Event:
     client_id: uuid.UUID
     timestamp: datetime
     event_type: EventType
+    assignment_group: str
 
     def to_dict(self) -> dict[str, Any]:
         attributes_with_values: dict[str, Any] = {}
@@ -69,8 +70,8 @@ def parse_all_events_from_csv(csv_events_file_path: str) -> (list[Event]):
                                 rank=int(float(rank)) - 1,
                                 timestamp=datetime.strptime(row[Field.TIMESTAMP], '%Y-%m-%d %H:%M:%S'),
                                 client_id=client_id,
-                                event_type=EventType(row[Field.EVENT_TYPE])))
-
+                                event_type=EventType(row[Field.EVENT_TYPE]),
+                                assignment_group=row[Field.ASSIGNMENT_GROUP]))
         return events
 
 
