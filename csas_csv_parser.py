@@ -22,6 +22,7 @@ class EventType(Enum):
 class Event:
     """ One row in csas_file.csv """
     source_ticket_id: str
+    similar_ticket_id: str
     similar_tickets_ids: list[str]
     rank: int
     client_id: uuid.UUID
@@ -63,6 +64,7 @@ def parse_all_events_from_csv(csv_events_file_path: str) -> (list[Event]):
             client_id = uuid.UUID(row[Field.CLIENT_ID]) if not row[Field.CLIENT_ID] == 'n/a' else None
 
             events.append(Event(source_ticket_id=row[Field.SOURCE_TICKET_ID],
+                                similar_ticket_id=row[Field.SIMILAR_TICKET_ID],
                                 similar_tickets_ids=similar_tickets_ids,
                                 rank=int(float(rank)) - 1,
                                 timestamp=datetime.strptime(row[Field.TIMESTAMP], '%Y-%m-%d %H:%M:%S'),
