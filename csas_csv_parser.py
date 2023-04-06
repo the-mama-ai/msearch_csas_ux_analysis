@@ -37,19 +37,20 @@ class Event:
         return attributes_with_values
 
 
-def parse_all_events_from_csv(csv_events_file_path: str) -> (list[Event]):
-    class Field(int, Enum):
-        """ Column type, indexed from 0, in the csas_file.csv """
-        TIMESTAMP = 1
-        EVENT_TYPE = 2
-        EVENT_ID = 3
-        SOURCE_TICKET_ID = 4
-        ASSIGNMENT_GROUP = 5
-        SIMILAR_TICKET_ID = 6
-        SIMILAR_TICKET_IDS = 7
-        RANK = 8
-        CLIENT_ID = 10
+class Field(int, Enum):
+    """ Column type, indexed from 0, in the csas_file.csv """
+    TIMESTAMP = 1
+    EVENT_TYPE = 2
+    EVENT_ID = 3
+    SOURCE_TICKET_ID = 4
+    ASSIGNMENT_GROUP = 5
+    SIMILAR_TICKET_ID = 6
+    SIMILAR_TICKET_IDS = 7
+    RANK = 8
+    CLIENT_ID = 10
 
+
+def parse_all_events_from_csv(csv_events_file_path: str) -> (list[Event]):
     events: list[Event] = []
 
     with open(csv_events_file_path, 'r') as csv_file:
@@ -91,6 +92,19 @@ def get_event_type_counts(events: list[Event]) -> dict[EventType, int]:
 
 def filter_events_by_time(events: list[Event], date_from: date) -> list[Event]:
     return [event for event in events if event.timestamp.date() >= date_from]
+
+
+def get_unique_assignment_groups(csv_events_file_path: str) -> list[str]:
+    unique_assignment_groups: set[str] = set()
+
+    with open(csv_events_file_path, 'r') as csv_file:
+        reader = csv.reader(csv_file)
+        for row in reader:
+            if row[0] == '':
+                continue
+            unique_assignment_groups.add(row[Field.ASSIGNMENT_GROUP])
+
+    return unique_assignment_groups
 
 
 if __name__ == '__main__':
