@@ -17,6 +17,9 @@ class EventType(Enum):
     VIEW_SIMILAR_INCIDENT = 'view-similar-incident'
     VIEW_SOURCE_INCIDENT = 'view-source-incident'
 
+    def is_sentiment(self, event_type):
+        return event_type == self.LIKE or event_type == self.DISLIKE
+
 
 @dataclasses.dataclass(slots=True, frozen=True)
 class Event:
