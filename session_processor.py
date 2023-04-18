@@ -22,7 +22,7 @@ class Session:
     only_view: bool = True
 
 
-def process_sessions(df: pd.DataFrame, events: list[Event]) -> dict[tuple(str, UUID), Session]:
+def process_sessions(df: pd.DataFrame, events: list[Event]) -> dict[tuple[str, UUID], Session]:
     grouped_source_and_user = df.groupby(['source_ticket_id', 'client_id'])
 
     sessions_sentiment: dict[str, np.ndarray] = {}
@@ -98,7 +98,7 @@ def process_sessions(df: pd.DataFrame, events: list[Event]) -> dict[tuple(str, U
     return sessions, sessions_without_click
 
 
-def sort_sessions_by_time(sessions: dict[str, Session]) -> list[tuple(str, UUID), Session]:
+def sort_sessions_by_time(sessions: dict[str, Session]) -> list[tuple[str, UUID], Session]:
     return sorted(sessions.items(), key=lambda item: item[1].timestamp_start)
 
 
