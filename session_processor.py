@@ -3,12 +3,15 @@ from datetime import datetime
 from uuid import UUID
 import numpy as np
 import pandas as pd
+
 from event import Event, EventType
 
 # ======== C O N S T A N T S ==========================
 LIKE_WEIGHT = 1
 DISLIKE_WEIGHT = 0.67
 SIMILAR_VIEW_WEIGHT = 10e-4
+
+
 # =======================================================
 
 @dataclasses.dataclass
@@ -19,7 +22,7 @@ class Session:
     only_view: bool = True
 
 
-def process_sessions(df: pd.DataFrame, events: list[Event]):
+def process_sessions(df: pd.DataFrame, events: list[Event]) -> dict[tuple(str, UUID), Session]:
     grouped_source_and_user = df.groupby(['source_ticket_id', 'client_id'])
 
     sessions_sentiment: dict[str, np.ndarray] = {}
@@ -45,6 +48,17 @@ def process_sessions(df: pd.DataFrame, events: list[Event]):
                 contains_view_similar = True
         if contains_view_similar:
             sessions_only_view[source_and_user] = indices
+
+    sessions_without_click: dict[str, np.ndarray] = {}
+    for source_and_user, indices in grouped_source_and_user.indices.items():
+        contains_click = False
+        for index in indices:
+            event: Event = events[index]
+            if event.event_type in [EventType.LIKE, EventType.DISLIKE, EventType.VIEW_SIMILAR_INCIDENT]:
+                contains_click = True
+                break
+        if not contains_click:
+            sessions_without_click[source_and_user] = indices
 
     relevant_sessions = sessions_sentiment | sessions_only_view
     sessions: dict[str, Session] = {name: Session() for name in relevant_sessions.keys()}
@@ -81,10 +95,10 @@ def process_sessions(df: pd.DataFrame, events: list[Event]):
         sessions[source_and_user].events += [events[index] for index in indices]
         sessions[source_and_user].timestamp_start = events[indices[0]].timestamp
 
-    return sessions
+    return sessions, sessions_without_click
 
 
-def sort_sessions_by_time(sessions: dict[str, Session]) -> tuple[str, Session]:
+def sort_sessions_by_time(sessions: dict[str, Session]) -> list[tuple(str, UUID), Session]:
     return sorted(sessions.items(), key=lambda item: item[1].timestamp_start)
 
 
@@ -141,3 +155,11 @@ def untoggle_events(events: list[Event]):
         untoggled_events.append(event)
 
     return untoggled_events
+
+
+def discard_not_relevant_sessions(not_relevant_sessions: list[tuple[str, UUID]],
+                                  sessions: dict[tuple[str, UUID], Session]) -> None:
+    """ Discards not-relevant session, if it has negative sentiment. """
+    for key in not_relevant_sessions:
+        if sessions[key].sentiment < 0:
+            del sessions[key]
