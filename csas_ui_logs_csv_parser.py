@@ -1,46 +1,12 @@
 import csv
-import dataclasses
 from datetime import datetime, date
 import uuid
 from enum import Enum
-from pprint import pprint
-from typing import Any
 
-import httpx
+from event import Event, EventType
 
 
-class EventType(Enum):
-    LIKE = 'like'
-    DISLIKE = 'dislike'
-    VIEW_INCIDENT_RESULTS = 'view-incident-results'
-    VIEW_INCIDENT_RESULTS_NA = 'view-incident-results-na'
-    VIEW_SIMILAR_INCIDENT = 'view-similar-incident'
-    VIEW_SOURCE_INCIDENT = 'view-source-incident'
-
-    def is_sentiment(self, event_type):
-        return event_type == self.LIKE or event_type == self.DISLIKE
-
-
-@dataclasses.dataclass(slots=True, frozen=True)
-class Event:
-    """ One row in csas_file.csv """
-    source_ticket_id: str
-    similar_ticket_id: str
-    similar_tickets_ids: list[str]
-    rank: int
-    client_id: uuid.UUID
-    timestamp: datetime
-    event_type: EventType
-    assignment_group: str
-
-    def to_dict(self) -> dict[str, Any]:
-        attributes_with_values: dict[str, Any] = {}
-        for field in self.__dataclass_fields__:
-            attributes_with_values[field] = getattr(self, field)
-        return attributes_with_values
-
-
-class Field(int, Enum):
+class Column(int, Enum):
     """ Column type, indexed from 0, in the csas_file.csv """
     TIMESTAMP = 1
     EVENT_TYPE = 2
@@ -62,20 +28,20 @@ def parse_all_events_from_csv(csv_events_file_path: str) -> (list[Event]):
             if row[0] == '':
                 continue
 
-            similar_tickets_ids: list[str] = row[Field.SIMILAR_TICKET_IDS] \
+            similar_tickets_ids: list[str] = row[Column.SIMILAR_TICKET_IDS] \
                 .replace(',', '').replace('[', '').replace(']', '').replace("'", '').split(' ')
 
-            rank = row[Field.RANK] or 0
-            client_id = uuid.UUID(row[Field.CLIENT_ID]) if not row[Field.CLIENT_ID] == 'n/a' else None
+            rank = row[Column.RANK] or 0
+            client_id = uuid.UUID(row[Column.CLIENT_ID]) if not row[Column.CLIENT_ID] == 'n/a' else None
 
-            events.append(Event(source_ticket_id=row[Field.SOURCE_TICKET_ID],
-                                similar_ticket_id=row[Field.SIMILAR_TICKET_ID],
+            events.append(Event(source_ticket_id=row[Column.SOURCE_TICKET_ID],
+                                similar_ticket_id=row[Column.SIMILAR_TICKET_ID],
                                 similar_tickets_ids=similar_tickets_ids,
                                 rank=int(float(rank)) - 1,
-                                timestamp=datetime.strptime(row[Field.TIMESTAMP], '%Y-%m-%d %H:%M:%S'),
+                                timestamp=datetime.strptime(row[Column.TIMESTAMP], '%Y-%m-%d %H:%M:%S'),
                                 client_id=client_id,
-                                event_type=EventType(row[Field.EVENT_TYPE]),
-                                assignment_group=row[Field.ASSIGNMENT_GROUP]))
+                                event_type=EventType(row[Column.EVENT_TYPE]),
+                                assignment_group=row[Column.ASSIGNMENT_GROUP]))
         return events
 
 
@@ -105,7 +71,7 @@ def get_unique_assignment_groups(csv_events_file_path: str) -> list[str]:
         for row in reader:
             if row[0] == '':
                 continue
-            unique_assignment_groups.add(row[Field.ASSIGNMENT_GROUP])
+            unique_assignment_groups.add(row[Column.ASSIGNMENT_GROUP])
 
     return unique_assignment_groups
 
